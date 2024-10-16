@@ -2,6 +2,12 @@ use serde_json::Value;
 use crate::error::JsonError;
 use crate::manifests::mod_manifest::ModManifest;
 
+pub(crate) trait JsonSerializable {
+	fn serialize(&self) -> Value;
+
+	fn deserialize(value: &Value) -> Result<Self, JsonError> where Self: Sized;
+}
+
 pub(crate) trait JsonSerializer<T> {
 	fn serialize(&self, value: &T) -> Value;
 
