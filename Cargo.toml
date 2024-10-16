@@ -1,0 +1,7 @@
+[workspace]
+members = [
+	"hd2mm_lib",
+	"hd2mm",
+	"hd2mm_web"
+]
+resolver = "2"
