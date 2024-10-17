@@ -1,6 +1,9 @@
 use std::{
 	fs,
-	path::{Path, PathBuf}
+	path::{
+		Path,
+		PathBuf
+	}
 };
 use serde_json::{
 	json,
@@ -40,6 +43,25 @@ impl ModSubOption {
 
 	pub fn path(&self) -> &PathBuf {
 		&self.path
+	}
+}
+
+impl JsonSerializable for ModSubOption {
+	fn serialize(&self) -> Value {
+		json!({
+			"Name": self.name,
+			"Description": self.description,
+			"Path": self.path
+		})
+	}
+
+	fn deserialize(value: &Value) -> Result<Self, JsonError> where Self: Sized {
+		let root = value.as_object().ok_or(JsonError::ExpectedRootObject)?;
+		let get_str = |key: &str| root.get(key).and_then(Value::as_str).ok_or(JsonError::ExpectedString(key.to_owned()));
+		let name = get_str("Name")?;
+		let description = get_str("Description")?;
+		let path = PathBuf::from(get_str("Path")?);
+		Ok(Self::new(name.to_owned(), description.to_owned(), path))
 	}
 }
 
@@ -83,6 +105,55 @@ impl ModOption {
 	}
 }
 
+impl JsonSerializable for ModOption {
+	fn serialize(&self) -> Value {
+		let opts = self.sub_options.as_deref().map(|s| {
+			let mut v = Vec::<Value>::new();
+			for o in s {
+				v.push(o.serialize());
+			}
+			v
+		});
+		json!({
+			"Name": self.name,
+			"Description": self.description,
+			"Path": self.path,
+			"Include": self.include,
+			"SubOptions": opts
+		})
+	}
+
+	fn deserialize(value: &Value) -> Result<Self, JsonError> where Self: Sized {
+		let root = value.as_object().ok_or(JsonError::ExpectedRootObject)?;
+		let get_str = |key: &str| root.get(key).and_then(Value::as_str).ok_or(JsonError::ExpectedString(key.to_owned()));
+		let name = get_str("Name")?;
+		let description = get_str("Description")?;
+		let path = PathBuf::from(get_str("Path")?);
+		let mut include: Option<Vec<PathBuf>> = None;
+		let mut sub_options: Option<Vec<ModSubOption>> = None;
+
+		if let Some(arr) = root.get("Include").and_then(Value::as_array) {
+			if !arr.iter().all(Value::is_string) {
+				return Err(JsonError::ExpectedArrayOfString("Include".to_owned()));
+			}
+			include = Some(arr.iter().map(|v| PathBuf::from(v.as_str().unwrap())).collect());
+		}
+
+		if let Some(arr) = root.get("SubOptions").and_then(Value::as_array) {
+			if !arr.iter().all(Value::is_object) {
+				return Err(JsonError::ExpectedArrayOfObject("SubOptions".to_owned()));
+			}
+			let mut vec = Vec::<ModSubOption>::new();
+			for v in arr {
+				vec.push(ModSubOption::deserialize(v)?);
+			}
+			sub_options = Some(vec);
+		}
+
+		Ok(Self::new(name.to_owned(), description.to_owned(), path, include, sub_options))
+	}
+}
+
 pub struct ModNexusData {
 	id: i64,
 	version: String
@@ -114,19 +185,10 @@ impl JsonSerializable for ModNexusData {
 	}
 
 	fn deserialize(value: &Value) -> Result<Self, JsonError> where Self: Sized {
-		if let Some(root) = value.as_object() {
-			if let Some(id) = root.get("Id").and_then(Value::as_i64) {
-				if let Some(version) = root.get("Version").and_then(Value::as_str) {
-					Ok(Self::new(id, version.to_owned()))
-				} else {
-					Err(JsonError::ExpectedString("Version".to_owned()))
-				}
-			} else {
-				Err(JsonError::ExpectedString("Id".to_owned()))
-			}
-		} else {
-			Err(JsonError::ExpectedRootObject)
-		}
+		let root = value.as_object().ok_or(JsonError::ExpectedRootObject)?;
+		let id = root.get("Id").and_then(Value::as_i64).ok_or(JsonError::ExpectedString("Id".to_owned()))?;
+		let version = root.get("Version").and_then(Value::as_str).ok_or(JsonError::ExpectedString("Version".to_owned()))?;
+		Ok(Self::new(id, version.to_owned()))
 	}
 }
 
@@ -184,20 +246,17 @@ impl ModManifest {
 	pub fn from_file<P: AsRef<Path>>(&self, path: P) -> Result<Self, ModManifestError> {
 		let file = fs::File::open(path).map_err(|e| ModManifestError::IOError(e))?;
 		let value: Value = serde_json::from_reader(file).map_err(|e| ModManifestError::SerdeError(e))?;
-		if let Some(root) = value.as_object() {
-			let deserializer: Box<dyn JsonSerializer<ModManifest>>;
-			if let Some(num) = root.get("Version").and_then(Value::as_i64) {
-				match num {
-					1 => deserializer = Box::new(ModManifestSerializerV1),
-					num => return Err(ModManifestError::UnknownVersion(num))
-				}
-			} else {
-				deserializer = Box::new(ModManifestSerializerLegacy);
+		let root = value.as_object().ok_or(ModManifestError::JsonError(JsonError::ExpectedRootObject))?;
+		let deserializer: Box<dyn JsonSerializer<ModManifest>>;
+		if let Some(num) = root.get("Version").and_then(Value::as_i64) {
+			match num {
+				1 => deserializer = Box::new(ModManifestSerializerV1),
+				num => return Err(ModManifestError::UnknownVersion(num))
 			}
-			deserializer.deserialize(&value).map_err(|e| ModManifestError::JsonError(e))
 		} else {
-			Err(ModManifestError::JsonError(JsonError::ExpectedRootObject))
+			deserializer = Box::new(ModManifestSerializerLegacy);
 		}
+		deserializer.deserialize(&value).map_err(|e| ModManifestError::JsonError(e))
 	}
 
 	pub fn to_file<P: AsRef<Path>>(&self, path: P) -> Result<(), ModManifestError> {
@@ -206,4 +265,28 @@ impl ModManifest {
 		let file = fs::File::create(path).map_err(|e| ModManifestError::IOError(e))?;
 		serde_json::to_writer(file, &value).map_err(|e| ModManifestError::SerdeError(e))
 	} 
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+	#[test]
+	fn nexus_data_serialize() {
+		let dat = ModNexusData::new(105, "1.0.1".to_owned());
+		println!("{:?}", dat.serialize());
+	}
+
+	#[test]
+	fn mod_option_serialize() {
+		let sub = ModSubOption::new("Test".to_owned(), "An selectable sub option.".to_owned(), PathBuf::from("opt"));
+		let opt = ModOption::new("Test".to_owned(), "An enablable option.".to_owned(), PathBuf::from("opt"), Some(vec![ PathBuf::from("def") ]), Some(vec![ sub ]));
+		println!("{:?}", opt.serialize());
+	}
+
+	#[test]
+	fn sub_option_serialize() {
+		let sub = ModSubOption::new("Test".to_owned(), "An selectable sub option.".to_owned(), PathBuf::from("opt"));
+		println!("{:?}", sub.serialize());
+	}
 }
