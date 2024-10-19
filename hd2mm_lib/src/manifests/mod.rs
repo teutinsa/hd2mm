@@ -1,1 +1,2 @@
-pub mod mod_manifest;
+pub mod mod_manifests;
+pub mod profile_manifest;

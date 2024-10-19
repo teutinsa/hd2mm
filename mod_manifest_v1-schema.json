@@ -1,0 +1,120 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Mod Manifest v1",
+	"type": "object",
+	"properties": {
+		"Version": {
+			"type": "number",
+			"enum": [ 1 ],
+			"description": "The version of this manifest."
+		},
+		"Guid": {
+			"type": "string",
+			"format": "uuid",
+			"description": "The UUID of the mod. This is used by the manager to idetify your mod."
+		},
+		"Name": {
+			"type": "string",
+			"description": "The name of the mod."
+		},
+		"Description": {
+			"type": "string",
+			"description": "A short description of the mod."
+		},
+		"IconPath": {
+			"type": [
+				"string",
+				"null"
+			],
+			"description": "A relative path to an image file to be used as the icon for this mod in the manager."
+		},
+		"Options": {
+			"type": [
+				"array",
+				"null"
+			],
+			"description": "Describes togglable options for this mod.",
+			"items": {
+				"type": "object",
+				"properties": {
+					"Name": {
+						"type": "string",
+						"description": "The name of this option."
+					},
+					"Description": {
+						"type": "string",
+						"description": "The description of this option."
+					},
+					"Include": {
+						"type": "array",
+						"description": "The relative path to the contents of this option.",
+						"items": {
+							"type": "string"
+						},
+						"minItems": 1,
+						"uniqueItems": true
+					},
+					"SubOption": {
+						"type": [
+							"array",
+							"null"
+						],
+						"description": "Selectable sub-options for this mod option.",
+						"items": {
+							"type": "object",
+							"properties": {
+								"Name": {
+									"type": "string",
+									"description": "The name of the sub-option."
+								},
+								"Description": {
+									"type": "string",
+									"description": "The description of the sub-option."
+								},
+								"Path": {
+									"type": "string",
+									"description": "The relative path to the contents of this sub option."
+								}
+							},
+							"required": [
+								"Name",
+								"Description",
+								"Path"
+							]
+						}
+					}
+				},
+				"required": [
+					"Name",
+					"Description",
+					"Include"
+				]
+			}
+		},
+		"NexusData": {
+			"description": "Data about the mod on NexusMods.com\nUse this if you want your mod to auto update.",
+			"type": [
+				"object",
+				"null"
+			],
+			"properties": {
+				"Id": {
+					"type": "number"
+				},
+				"Version": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"Id",
+				"Version"
+			]
+		}
+	},
+	"required": [
+		"Version",
+		"Guid",
+		"Name",
+		"Description"
+	]
+}

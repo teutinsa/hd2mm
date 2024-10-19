@@ -4,3 +4,4 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+hd2mm_lib = { path = "../hd2mm_lib" }

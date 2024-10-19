@@ -68,17 +68,15 @@ impl JsonSerializable for ModSubOption {
 pub struct ModOption {
 	name: String,
 	description: String,
-	path: PathBuf,
-	include: Option<Vec<PathBuf>>,
+	include: Vec<PathBuf>,
 	sub_options: Option<Vec<ModSubOption>>
 }
 
 impl ModOption {
-	pub fn new(name: String, description: String, path: PathBuf, include: Option<Vec<PathBuf>>, sub_options: Option<Vec<ModSubOption>>) -> Self {
+	pub fn new(name: String, description: String, include: Vec<PathBuf>, sub_options: Option<Vec<ModSubOption>>) -> Self {
 		Self {
 			name,
 			description,
-			path,
 			include,
 			sub_options
 		}
@@ -92,12 +90,8 @@ impl ModOption {
 		&self.description
 	}
 
-	pub fn path(&self) -> &PathBuf {
-		&self.path
-	}
-
-	pub fn include(&self) -> Option<&[PathBuf]> {
-		self.include.as_deref()
+	pub fn include(&self) -> &[PathBuf] {
+		&self.include
 	}
 
 	pub fn sub_options(&self) -> Option<&[ModSubOption]> {
@@ -117,7 +111,6 @@ impl JsonSerializable for ModOption {
 		json!({
 			"Name": self.name,
 			"Description": self.description,
-			"Path": self.path,
 			"Include": self.include,
 			"SubOptions": opts
 		})
@@ -128,17 +121,18 @@ impl JsonSerializable for ModOption {
 		let get_str = |key: &str| root.get(key).and_then(Value::as_str).ok_or(JsonError::ExpectedString(key.to_owned()));
 		let name = get_str("Name")?;
 		let description = get_str("Description")?;
-		let path = PathBuf::from(get_str("Path")?);
-		let mut include: Option<Vec<PathBuf>> = None;
-		let mut sub_options: Option<Vec<ModSubOption>> = None;
-
+		
+		let include: Vec<PathBuf>;
 		if let Some(arr) = root.get("Include").and_then(Value::as_array) {
-			if !arr.iter().all(Value::is_string) {
+			if !arr.iter().any(Value::is_string) {
 				return Err(JsonError::ExpectedArrayOfString("Include".to_owned()));
 			}
-			include = Some(arr.iter().map(|v| PathBuf::from(v.as_str().unwrap())).collect());
+			include = arr.iter().map(|v| PathBuf::from(v.as_str().unwrap())).collect();
+		} else {
+			return Err(JsonError::ExpectedArray("Include".to_owned()));
 		}
 
+		let mut sub_options: Option<Vec<ModSubOption>> = None;
 		if let Some(arr) = root.get("SubOptions").and_then(Value::as_array) {
 			if !arr.iter().all(Value::is_object) {
 				return Err(JsonError::ExpectedArrayOfObject("SubOptions".to_owned()));
@@ -150,7 +144,7 @@ impl JsonSerializable for ModOption {
 			sub_options = Some(vec);
 		}
 
-		Ok(Self::new(name.to_owned(), description.to_owned(), path, include, sub_options))
+		Ok(Self::new(name.to_owned(), description.to_owned(), include, sub_options))
 	}
 }
 
@@ -264,7 +258,7 @@ impl ModManifest {
 		let value = serializer.serialize(&self);
 		let file = fs::File::create(path).map_err(|e| ModManifestError::IOError(e))?;
 		serde_json::to_writer(file, &value).map_err(|e| ModManifestError::SerdeError(e))
-	} 
+	}
 }
 
 #[cfg(test)]
@@ -280,7 +274,7 @@ mod test {
 	#[test]
 	fn mod_option_serialize() {
 		let sub = ModSubOption::new("Test".to_owned(), "An selectable sub option.".to_owned(), PathBuf::from("opt"));
-		let opt = ModOption::new("Test".to_owned(), "An enablable option.".to_owned(), PathBuf::from("opt"), Some(vec![ PathBuf::from("def") ]), Some(vec![ sub ]));
+		let opt = ModOption::new("Test".to_owned(), "An enablable option.".to_owned(), vec![ PathBuf::from("def") ], Some(vec![ sub ]));
 		println!("{:?}", opt.serialize());
 	}
 

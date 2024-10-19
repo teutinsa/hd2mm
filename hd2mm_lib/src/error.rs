@@ -73,3 +73,18 @@ impl Display for ModManifestError {
 }
 
 impl Error for ModManifestError { }
+
+#[derive(Debug)]
+pub enum ModManagerError {
+	InvalidGamePath,
+	IOError(std::io::Error),
+	ProfileAlreadyExists
+}
+
+impl Display for ModManagerError {
+	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+		todo!()
+	}
+}
+
+impl Error for ModManagerError { }
