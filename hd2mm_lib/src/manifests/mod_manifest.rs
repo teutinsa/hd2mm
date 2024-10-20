@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-
 use serde::{
 	Deserialize,
 	Serialize
@@ -8,7 +7,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct ModSubOption {
+pub(crate) struct ModSubOption {
 	name: String,
 	description: String,
 	include: Vec<PathBuf>
@@ -16,7 +15,7 @@ pub struct ModSubOption {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct ModOption {
+pub(crate) struct ModOption {
 	name: String,
 	description: String,
 	include: Option<Vec<PathBuf>>,
@@ -25,14 +24,36 @@ pub struct ModOption {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub struct NexusData {
-	id: i64,
+pub(crate) struct NexusData {
+	id: u32,
 	version: String
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(try_from = "u32", into = "u32")]
+pub(crate) struct Version<const VER: u32>;
+
+impl<const VER: u32> TryFrom<u32> for Version<VER> {
+	type Error = &'static str;
+
+	fn try_from(value: u32) -> Result<Self, Self::Error> {
+		if value == VER {
+			Ok(Version::<VER>)
+		} else {
+			Err("version missmatch")
+		}
+	}
+}
+
+impl<const VER: u32> From<Version<VER>> for u32 {
+	fn from(_value: Version<VER>) -> Self {
+		VER
+	}
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
-pub enum ModManifest {
+pub(crate) enum ModManifest {
 	#[serde(rename_all = "PascalCase")]
 	Legacy {
 		guid: Uuid,
@@ -43,7 +64,7 @@ pub enum ModManifest {
 	},
 	#[serde(rename_all = "PascalCase")]
 	V1 {
-		version: i64,
+		version: Version<1>,
 		guid: Uuid,
 		name: String,
 		description: String,
@@ -116,9 +137,48 @@ mod test {
 	}
 
 	#[test]
+	#[should_panic]
+	fn mod_manifest_deserialize_invalid_version() {
+		let data = r#"
+		{
+			"Version": 2,
+			"Guid": "00000000-0000-0000-0000-000000000000",
+			"Name": "Test",
+			"Description": "A test mod.",
+			"Options": [
+				{
+					"Name": "Default",
+					"Description": "The default option.",
+					"Include": [
+						"(Body)"
+					],
+					"SubOptions": [
+						{
+							"Name": "Version A",
+							"Description": "Skin A",
+							"Include": [
+								"Folder A"
+							]
+						},
+						{
+							"Name": "Version B",
+							"Description": "Skin B",
+							"Include": [
+								"Folder B"
+							]
+						}
+					]
+				}
+			]
+		}
+		"#;
+		let _: ModManifest = serde_json::from_str(data).unwrap();
+	}
+
+	#[test]
 	fn mod_manifest_serialize() {
 		let manifest = ModManifest::V1 {
-			version: 1,
+			version: Version::<1>,
 			guid: Uuid::nil(),
 			name: "Test".to_owned(),
 			description: "A test mod.".to_owned(),

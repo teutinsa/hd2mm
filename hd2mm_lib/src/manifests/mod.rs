@@ -1,1 +1,1 @@
-pub mod mod_manifest;
+pub(crate) mod mod_manifest;

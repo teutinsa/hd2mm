@@ -1,4 +1,4 @@
-pub mod manifests;
+pub(crate) mod manifests;
 
 use std::path::{
 	Path,
