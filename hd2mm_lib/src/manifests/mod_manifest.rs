@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::path::{
+	Path,
+	PathBuf
+};
 use serde::{
 	Deserialize,
 	Serialize
@@ -7,31 +10,97 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub(crate) struct ModSubOption {
+pub struct ModSubOption {
 	name: String,
 	description: String,
 	include: Vec<PathBuf>
 }
 
+impl ModSubOption {
+	pub fn new(name: String, description: String, include: Vec<PathBuf>) -> Self {
+		Self {
+			name,
+			description,
+			include
+		}
+	}
+
+	pub fn name(&self) -> &str {
+		&self.name
+	}
+
+	pub fn description(&self) -> &str {
+		&self.description
+	}
+
+	pub fn include(&self) -> &[PathBuf] {
+		&self.include
+	}
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub(crate) struct ModOption {
+pub struct ModOption {
 	name: String,
 	description: String,
 	include: Option<Vec<PathBuf>>,
 	sub_options: Option<Vec<ModSubOption>>
 }
 
+impl ModOption {
+	pub fn new(name: String, description: String, include: Option<Vec<PathBuf>>, sub_options: Option<Vec<ModSubOption>>) -> Self {
+		Self {
+			name,
+			description,
+			include,
+			sub_options
+		}
+	}
+
+	pub fn name(&self) -> &str {
+		&self.name
+	}
+
+	pub fn description(&self) -> &str {
+		&self.description
+	}
+
+	pub fn include(&self) -> Option<&[PathBuf]> {
+		self.include.as_deref()
+	}
+
+	pub fn sub_options(&self) -> Option<&[ModSubOption]> {
+		self.sub_options.as_deref()
+	}
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
-pub(crate) struct NexusData {
+pub struct NexusData {
 	id: u32,
 	version: String
 }
 
+impl NexusData {
+	pub fn new(id: u32, version: String) -> Self {
+		Self {
+			id,
+			version
+		}
+	}
+
+	pub fn id(&self) -> u32 {
+		self.id
+	}
+
+	pub fn version(&self) -> &str {
+		&self.version
+	}
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(try_from = "u32", into = "u32")]
-pub(crate) struct Version<const VER: u32>;
+pub struct Version<const VER: u32>;
 
 impl<const VER: u32> TryFrom<u32> for Version<VER> {
 	type Error = &'static str;
@@ -53,7 +122,7 @@ impl<const VER: u32> From<Version<VER>> for u32 {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
-pub(crate) enum ModManifest {
+enum ModData {
 	#[serde(rename_all = "PascalCase")]
 	Legacy {
 		guid: Uuid,
@@ -71,6 +140,67 @@ pub(crate) enum ModManifest {
 		icon_path: Option<PathBuf>,
 		options: Option<Vec<ModOption>>,
 		nexus_data: Option<NexusData>
+	}
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ModManifest {
+	#[serde(flatten)]
+	data: ModData
+}
+
+impl ModManifest {
+	pub fn new(guid: Uuid, name: String, description: String, icon_path: Option<PathBuf>, options: Option<Vec<ModOption>>, nexus_data: Option<NexusData>) -> Self {
+		Self {
+			data: ModData::V1 {
+				version: Version::<1>,
+				guid,
+				name,
+				description,
+				icon_path,
+				options,
+				nexus_data
+			}
+		}
+	}
+
+	pub fn guid(&self) -> &Uuid {
+		match &self.data {
+			ModData::Legacy { guid, .. } => guid,
+			ModData::V1 { guid, ..} => guid
+		}
+	}
+
+	pub fn name(&self) -> &str {
+		match &self.data {
+			ModData::Legacy { name, .. } => name,
+			ModData::V1 { name, .. } => name
+		}
+	}
+
+	pub fn description(&self) -> &str {
+		match &self.data {
+			ModData::Legacy { description, .. } => description,
+			ModData::V1 { description, .. } => description
+		}
+	}
+
+	pub fn icon_path(&self) -> Option<&Path> {
+		match &self.data {
+			ModData::Legacy { icon_path, .. } => icon_path.as_deref(),
+			ModData::V1 { icon_path, .. } => icon_path.as_deref()
+		}
+	}
+
+	pub fn options(&self) -> Option<&[ModOption]> {
+		todo!()
+	}
+
+	pub fn is_legacy(&self) -> bool {
+		match self.data {
+			ModData::Legacy { .. } => true,
+			_ => false
+		}
 	}
 }
 
@@ -93,7 +223,7 @@ mod test {
 		}
 		"#;
 		let value: ModManifest = serde_json::from_str(data).unwrap();
-		assert!(matches!(value, ModManifest::Legacy { guid: _, name: _, description: _, icon_path: _, options: _ }))
+		assert!(value.is_legacy())
 	}
 
 	#[test]
@@ -133,7 +263,7 @@ mod test {
 		"#;
 		let value: ModManifest = serde_json::from_str(data).unwrap();
 		println!("{:?}", value);
-		assert!(matches!(value, ModManifest::V1 { version: _, guid: _, name: _, description: _, icon_path: _, options: _, nexus_data: _ }))
+		assert!(!value.is_legacy())
 	}
 
 	#[test]
@@ -177,20 +307,19 @@ mod test {
 
 	#[test]
 	fn mod_manifest_serialize() {
-		let manifest = ModManifest::V1 {
-			version: Version::<1>,
-			guid: Uuid::nil(),
-			name: "Test".to_owned(),
-			description: "A test mod.".to_owned(),
-			icon_path: None,
-			options: Some(vec![
-				ModOption {
-					name: "Default".to_owned(),
-					description: "The default option.".to_owned(),
-					include: Some(vec![
+		let manifest = ModManifest::new(
+			Uuid::nil(),
+			"Test".to_owned(),
+			"A test mod.".to_owned(),
+			None,
+			Some(vec![
+				ModOption::new(
+					"Default".to_owned(),
+					"The default option.".to_owned(),
+					Some(vec![
 						PathBuf::from("(Body)")
 					]),
-					sub_options: Some(vec![
+					Some(vec![
 						ModSubOption {
 							name: "Version A".to_owned(),
 							description: "Skin A".to_owned(),
@@ -206,10 +335,10 @@ mod test {
 							]
 						}
 					])
-				}
+				)
 			]),
-			nexus_data: None
-		};
+			None
+		);
 		println!("{}", serde_json::to_string(&manifest).unwrap())
 	}
 }
