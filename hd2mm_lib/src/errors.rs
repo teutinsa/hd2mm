@@ -1,18 +1,19 @@
-use std::{error::Error, fmt::Display};
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Error)]
 pub enum ModError {
-	IOError(std::io::Error),
-	SerdeError(serde_json::Error)
+	#[error("mod io error")]
+	IOError(#[from] std::io::Error),
+	#[error("mod serde error")]
+	SerdeError(#[from] serde_json::Error)
 }
 
-impl Error for ModError { }
-
-impl Display for ModError {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		match self {
-			ModError::IOError(e) => write!(f, "mod io error \"{}\"", e),
-			ModError::SerdeError(e) => write!(f, "mod serde error \"{}\"", e)
-		}
-	}
+#[derive(Debug, Error)]
+pub enum ModManagerError {
+	#[error("invalid game path")]
+	InvalidGamePath,
+	#[error("invalid temporary path")]
+	InvalidTempPath,
+	#[error("invalid storage path")]
+	InvalidStoragePath
 }

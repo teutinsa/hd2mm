@@ -8,10 +8,20 @@ use std::{
 		PathBuf
 	}
 };
-use errors::ModError;
+use errors::{
+	ModError,
+	ModManagerError
+};
 use manifests::{
 	mod_manifest::ModManifest,
 	profile_manifest::ProfileManifest
+};
+use log::{
+	trace,
+	debug,
+	info,
+	warn,
+	error
 };
 
 pub struct Mod {
@@ -43,5 +53,33 @@ pub struct Profile {
 }
 
 pub struct ModManager {
-	profiles: Vec<Profile>
+	profiles: Vec<Profile>,
+	game_path: PathBuf,
+	storage_path: PathBuf,
+	temp_path: PathBuf
+}
+
+impl ModManager {
+	pub fn new(game_path: &PathBuf, storage_path: &PathBuf, temp_path: &PathBuf) -> Result<Self, ModManagerError> {
+		Ok(Self {
+			profiles: vec![],
+			game_path: Self::validate_game_path(game_path).ok_or(ModManagerError::InvalidGamePath)?,
+			storage_path: storage_path.to_path_buf(),
+			temp_path: temp_path.to_path_buf()
+		})
+	}
+
+	fn validate_game_path(game_path: &PathBuf) -> Option<PathBuf> {
+		let path;
+		if game_path.ends_with("Helldivers 2") {
+			path = game_path.as_path();
+		} else {
+			path = game_path.parent()?;
+		}
+		if path.ends_with("Helldivers 2") && path.join("data").is_dir() && path.join("bin").is_dir() {
+			Some(PathBuf::from(path))
+		} else {
+			None
+		}
+	}
 }

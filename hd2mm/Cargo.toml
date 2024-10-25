@@ -5,3 +5,7 @@ edition = "2021"
 
 [dependencies]
 hd2mm_lib = { path = "../hd2mm_lib" }
+eframe = { version = "0.29.1", features = [
+	"default"
+] }
+rfd = "0.15.0"

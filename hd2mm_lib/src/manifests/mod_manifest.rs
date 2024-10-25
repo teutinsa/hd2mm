@@ -1,6 +1,9 @@
-use std::path::{
-	Path,
-	PathBuf
+use std::{
+	cell::OnceCell, 
+	path::{
+		Path,
+		PathBuf
+	}
 };
 use serde::{
 	Deserialize,
@@ -129,7 +132,7 @@ enum ModData {
 		name: String,
 		description: String,
 		icon_path: Option<PathBuf>,
-		options: Option<Vec<PathBuf>>
+		options: Option<Vec<String>>
 	},
 	#[serde(rename_all = "PascalCase")]
 	V1 {
@@ -146,7 +149,9 @@ enum ModData {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ModManifest {
 	#[serde(flatten)]
-	data: ModData
+	data: ModData,
+	#[serde(skip)]
+	transalted_options: OnceCell<[ModOption; 1]>
 }
 
 impl ModManifest {
@@ -160,7 +165,8 @@ impl ModManifest {
 				icon_path,
 				options,
 				nexus_data
-			}
+			},
+			transalted_options: OnceCell::new()
 		}
 	}
 
@@ -193,7 +199,17 @@ impl ModManifest {
 	}
 
 	pub fn options(&self) -> Option<&[ModOption]> {
-		todo!()
+		match &self.data {
+			ModData::Legacy { options, .. } => {
+				options.as_ref().map(|v| {
+					self.transalted_options.get_or_init(|| {
+						let opts: Vec<ModSubOption> = v.iter().map(|s| ModSubOption::new(s.to_owned(), String::new(), vec![ PathBuf::from(s) ])).collect();
+						[ModOption::new("Default".to_owned(), String::new(), None, Some(opts)); 1]
+					}).as_slice()
+				})
+			},
+			ModData::V1 { options, .. } => options.as_deref()
+		}
 	}
 
 	pub fn is_legacy(&self) -> bool {
@@ -223,6 +239,7 @@ mod test {
 		}
 		"#;
 		let value: ModManifest = serde_json::from_str(data).unwrap();
+		println!("{:?}", value.options());
 		assert!(value.is_legacy())
 	}
 
