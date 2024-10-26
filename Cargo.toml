@@ -3,5 +3,5 @@ members = [
 	"hd2mm_lib",
 	"hd2mm",
 	"hd2mm_web"
-]
+, "trace_fn"]
 resolver = "2"

@@ -10,6 +10,13 @@ use serde::{
 	Serialize
 };
 use uuid::Uuid;
+use log::{
+	trace,
+	debug,
+	info,
+	warn,
+	error
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]

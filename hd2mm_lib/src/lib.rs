@@ -83,3 +83,23 @@ impl ModManager {
 		}
 	}
 }
+
+// #[macro_export]
+// macro_rules! trace_fn {
+// 	($struct_name:ident, $fn_name:ident) => {
+// 		log::trace!(concat!(stringify!($struct_name), "::", stringify!($fn_name), "()"));
+// 	};
+// 	($struct_name:ident, $fn_name:ident, $($arg_name:ident),*) => {
+// 		log::trace!(
+// 			concat!(
+// 				stringify!($struct_name), "::", stringify!($fn_name), "(",
+// 				$(
+// 					stringify!($arg_name), ": {:?}, "
+// 				),*,
+// 				")"
+// 			),
+// 			$($arg_name),*
+// 		);
+// 	};
+// }
+
