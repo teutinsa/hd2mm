@@ -9,3 +9,8 @@ eframe = { version = "0.29.1", features = [
 	"default"
 ] }
 rfd = "0.15.0"
+anyhow = "1.0.91"
+egui_dnd = "0.10.0"
+
+[profile.release]
+panic = "abort"

@@ -5,8 +5,15 @@ edition = "2021"
 
 [dependencies]
 trace_fn = { path = "../trace_fn" }
-uuid = { version = "1.10.0", features = [ "serde" ]}
+uuid = { version = "1.10.0", features = [ "serde", "v4" ] }
 serde = { version = "1.0.210", features = [ "derive" ] }
 serde_json = "1.0.128"
-thiserror = "1.0.65"
+thiserror = "2.0.0"
 log = "0.4.22"
+zip-extract = "0.2.1"
+fs-more = "0.8.0"
+tempdir = "0.3.7"
+sanitize-filename = "0.5.0"
+
+[dev-dependencies]
+simple_logger = "5.0.0"
