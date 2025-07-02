@@ -484,6 +484,23 @@ final class ModManagerService {
     if (_profiles.active >= _profiles.profiles.length) _profiles.active = _profiles.profiles.length - 1;
   }
 
+    Future<void> _ensureUserRWPermissions(Directory dir) async {
+    if (Platform.isWindows) return; // Windows does not support chmod, but this shouldn't be needed on Windows anyway.
+    await for (final entity in dir.list(recursive: true, followLinks: false)) {
+      try {
+        if (entity is File) {
+          // 0o600 = rw-------
+          await Process.run('chmod', ['600', entity.path]);
+        } else if (entity is Directory) {
+          // 0o700 = rwx------
+          await Process.run('chmod', ['700', entity.path]);
+        }
+      } catch (e) {
+        _log.warning("Failed to set permissions for ${entity.path}: $e");
+      }
+    }
+  }
+
   Future<void> _extractFileToDir(File archiveFile, Directory targetDir) async {
     if (path.extension(archiveFile.path) == ".rar") {
       if (_rarHandler == null) throw Exception("`rar` format not supported!");
@@ -547,5 +564,7 @@ final class ModManagerService {
     } else {
       await extractFileToDisk(archiveFile.path, targetDir.path);
     }
+
+    await _ensureUserRWPermissions(targetDir);
   }
 }
