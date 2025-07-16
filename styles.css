@@ -1,0 +1,147 @@
+:root {
+    --titlebar-height: 65px;
+    --titlebar-speperator-thickness: 2px;
+    --spacing-normal: 5px;
+    --spacing-small: 3px;
+}
+
+@font-face {
+    font-family: Blockletter;
+    src: url("public/fonts/Blockletter.otf");
+}
+
+@font-face {
+    font-family: 'FS Sinclair';
+    src: url("public/fonts/FS Sinclair Regular.otf");
+}
+
+body {
+    background-color: #000C;
+    position: absolute;
+    top: calc(var(--titlebar-height) + var(--titlebar-speperator-thickness));
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    padding: var(--spacing-normal);
+    font-family: 'FS Sinclair';
+}
+
+button {
+    background-color: transparent;
+    border: 3px solid gray;
+    color: white;
+    stroke: white;
+    font-family: Blockletter;
+    font-size: 14pt;
+    padding: 0;
+    text-align: center;
+}
+
+button:hover {
+    background-color: #FF0C;
+    border-color: yellow;
+}
+
+button:active {
+    background-color: yellow;
+    border-color: yellow;
+    color: black;
+    stroke: black;
+}
+
+.titlebar {
+    height: var(--titlebar-height);
+    background-color: transparent;
+    border-bottom: var(--titlebar-speperator-thickness) solid gray;
+    display: flex;
+    justify-content: center;
+    align-items: start;
+    user-select: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+}
+
+.titlebar > img {
+    height: 100%;
+    width: auto;
+    pointer-events: none;
+}
+
+.titlebar > span {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: white;
+    font-family: Blockletter;
+    font-size: 36pt;
+    pointer-events: none;
+}
+
+.titlebar > button {
+    width: 50px;
+    height: 30px;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid gray;
+    border-top: none;
+    margin-right: var(--spacing-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.titlebar > button:hover {
+    border-color: yellow;
+}
+
+.titlebar > button:active {
+    background-color: yellow;
+    border-color: yellow;
+    color: black;
+    stroke: black;
+}
+
+.titlebar > button.close-button:hover {
+    background-color: #F00C;
+    border-color: red;
+}
+
+.titlebar > button.close-button:active {
+    background-color: red;
+    border-color: red;
+}
+
+.titlebar > button.help-button:hover {
+    background-color: transparent;
+    border-color: #0AF;
+    color: #0AF;
+    stroke: #0AF;
+}
+
+.titlebar > button.help-button:active {
+    background-color: #0AF;
+    border-color: #0AF;
+    color: black;
+    stroke: black;
+}
+
+.titlebar > button.update-button {
+    color: #0F0;
+    stroke: #0F0;
+}
+
+.titlebar > button.update-button:hover {
+    background-color: #0F0C;
+    border-color: #0F0;
+}
+
+.titlebar > button.update-button:active {
+    background-color: #0F0;
+    border-color: #0F0;
+    color: black;
+    stroke: black;
+}
