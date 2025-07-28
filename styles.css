@@ -3,6 +3,7 @@
     --titlebar-speperator-thickness: 2px;
     --spacing-normal: 5px;
     --spacing-small: 3px;
+    --border-width: 3px;
 }
 
 @font-face {
@@ -24,7 +25,14 @@ body {
     bottom: 0;
     margin: 0;
     padding: var(--spacing-normal);
+    overflow: hidden;
     font-family: 'FS Sinclair';
+    color: white;
+    user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    cursor: default;
 }
 
 button {
@@ -36,6 +44,7 @@ button {
     font-size: 14pt;
     padding: 0;
     text-align: center;
+    cursor: pointer;
 }
 
 button:hover {
@@ -64,13 +73,13 @@ button:active {
     right: 0;
 }
 
-.titlebar > img {
+.titlebar>img {
     height: 100%;
     width: auto;
     pointer-events: none;
 }
 
-.titlebar > span {
+.titlebar>span {
     flex-grow: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -81,7 +90,7 @@ button:active {
     pointer-events: none;
 }
 
-.titlebar > button {
+.titlebar>button {
     width: 50px;
     height: 30px;
     flex-shrink: 0;
@@ -94,54 +103,129 @@ button:active {
     justify-content: center;
 }
 
-.titlebar > button:hover {
+.titlebar>button:hover {
     border-color: yellow;
 }
 
-.titlebar > button:active {
+.titlebar>button:active {
     background-color: yellow;
     border-color: yellow;
     color: black;
     stroke: black;
 }
 
-.titlebar > button.close-button:hover {
+.titlebar>button.close-button:hover {
     background-color: #F00C;
     border-color: red;
 }
 
-.titlebar > button.close-button:active {
+.titlebar>button.close-button:active {
     background-color: red;
     border-color: red;
 }
 
-.titlebar > button.help-button:hover {
+.titlebar>button.help-button:hover {
     background-color: transparent;
     border-color: #0AF;
     color: #0AF;
     stroke: #0AF;
 }
 
-.titlebar > button.help-button:active {
+.titlebar>button.help-button:active {
     background-color: #0AF;
     border-color: #0AF;
     color: black;
     stroke: black;
 }
 
-.titlebar > button.update-button {
+.titlebar>button.update-button {
     color: #0F0;
     stroke: #0F0;
 }
 
-.titlebar > button.update-button:hover {
+.titlebar>button.update-button:hover {
     background-color: #0F0C;
     border-color: #0F0;
 }
 
-.titlebar > button.update-button:active {
+.titlebar>button.update-button:active {
     background-color: #0F0;
     border-color: #0F0;
     color: black;
     stroke: black;
+}
+
+.load-spinner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 3px solid transparent;
+    border-top: 3px solid #FFF;
+    box-sizing: border-box;
+    animation: spinner-spin 1s linear infinite;
+    position: relative;
+    top: calc(50% - 24px);
+    left: calc(50% - 24px);
+    bottom: calc(50% - 24px);
+    right: calc(50% - 24px);
+}
+
+@keyframes spinner-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.error-page>h1 {
+    color: red;
+    font-size: 48pt;
+    margin: 0;
+    text-align: center;
+}
+
+.error-page>hr {
+    border: none;
+    border-bottom: 5px dashed red;
+}
+
+.error-page>span {
+    font-family: monospace;
+    font-size: 16pt;
+}
+
+.scroll-h {
+    overflow-x: scroll;
+}
+
+.scroll-v {
+    overflow-y: scroll;
+    text-wrap: wrap pretty;
+}
+
+.critical {
+    background-color: black;
+    font-size: 12pt;
+    font-family: monospace;
+    color: white;
+    text-decoration: underline red;
+}
+
+.message-box-shadow {
+    background-color: #000C;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.message-box {
+    background-color: black;
+    border: var(--border-width) solid gray;
 }
