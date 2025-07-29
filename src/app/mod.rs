@@ -10,10 +10,12 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use titlebar::TitleBar;
+use contexts::MessageBoxContext;
+use contexts::message_box::MessageBoxState;
 use contexts::SettingsContext;
 use contexts::LocalizationContext;
+use contexts::localization::LocalizationState;
 use contexts::ErrorContext;
-use contexts::MessageBoxContext;
 use pages::NotFoundPage;
 use pages::ErrorPage;
 use pages::LoadingPage;
@@ -26,7 +28,7 @@ pub enum Route {
     Dashboard,
     #[not_found]
     #[at("/404")]
-    NotFound
+    NotFound,
 }
 
 fn switch(route: Route) -> Html {
@@ -37,18 +39,12 @@ fn switch(route: Route) -> Html {
 }
 
 #[function_component]
-pub fn App() -> Html {    
-    let on_help = Callback::from(|_| {
-
-    });
-    
+pub fn App() -> Html {
     let error = use_state_eq(|| ErrorContext::default());
     let loading = use_state(|| true);
     let settings = use_state_eq(|| SettingsContext::default());
-    let localization = use_state_eq(|| LocalizationContext::default());
-    let message_box = use_state_eq(|| MessageBoxContext::default());
-    
-    (*message_box).clone().push(contexts::message_box::Message::Info("Test".to_string()));
+    let localization = use_reducer_eq(|| LocalizationState::default());
+    let message_box = use_reducer_eq(|| MessageBoxState::default());
     
     {
         let error = error.clone();
@@ -58,19 +54,20 @@ pub fn App() -> Html {
 
         use_effect_with((), move |_| {
             spawn_local(async move {
-                let mut new_settings = (*settings).clone();
-                new_settings.init().await;
-                settings.set(new_settings);
-
-                let mut new_localization = (*localization).clone();
-                new_localization.init().await;
-                localization.set(new_localization);
-
+                
                 loading.set(false);
             });
             || ()
         });
     }
+
+    let on_help = {
+        let message_box = message_box.clone();
+        Callback::from(move |_| {
+            use contexts::message_box::*;
+            message_box.dispatch(MessageBoxAction::Push(Message::Info("Not implemented.".to_owned())));
+        })
+    };
 
     let result = catch_unwind(AssertUnwindSafe(|| {
         html! {
@@ -83,8 +80,8 @@ pub fn App() -> Html {
                         <LoadingPage/>
                     } else {
                         <ContextProvider<SettingsContext> context={(*settings).clone()}>
-                            <ContextProvider<LocalizationContext> context={(*localization).clone()}>
-                                <ContextProvider<MessageBoxContext> context={(*message_box).clone()}>
+                            <ContextProvider<LocalizationContext> context={localization}>
+                                <ContextProvider<MessageBoxContext> context={message_box}>
                                     <BrowserRouter>
                                         <Switch<Route> render={switch}/>
                                     </BrowserRouter>

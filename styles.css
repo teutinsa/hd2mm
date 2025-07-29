@@ -1,6 +1,7 @@
 :root {
     --titlebar-height: 65px;
     --titlebar-speperator-thickness: 2px;
+    --spacing-big: 10px;
     --spacing-normal: 5px;
     --spacing-small: 3px;
     --border-width: 3px;
@@ -226,6 +227,36 @@ button:active {
 }
 
 .message-box {
+    margin: var(--spacing-big);
     background-color: black;
     border: var(--border-width) solid gray;
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+}
+
+.message-box>h1 {
+    font-family: Blockletter;
+    margin: var(--spacing-normal) var(--spacing-big);
+    text-align: center;
+}
+
+.message-box>span {
+    margin: var(--spacing-small);
+}
+
+.notification-box>button {
+    margin: var(--spacing-small);
+}
+
+.info-box>h1 {
+    color: #0AF;
+}
+
+.warning-box>h1 {
+    color: yellow;
+}
+
+.error-box>h1 {
+    color: red;
 }
